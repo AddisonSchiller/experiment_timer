@@ -7,6 +7,66 @@ from pyglet.window import mouse # noqa
 import sys
 
 
+class Button(object):
+    def __init__(self, upsprite, hoversprite, downsprite, x, y, callback=None, batch=None, label=None, args=None, labelbatch=None):
+        self.func = callback
+        self.upsprite = upsprite
+        self.downsprite = downsprite
+        self.hoversprite = hoversprite
+        self.trigger = 0
+        self.sprite = pyglet.sprite.Sprite(
+            upsprite,
+            x, y, batch=batch
+        )
+        if label is not None:
+            self.label = pyglet.text.Label(
+                label,
+                font_name='Times New Roman',
+                font_size=32,
+                x=self.sprite.x + self.sprite.width / 2,
+                y=self.sprite.y + self.sprite.height / 2,
+                anchor_x='center',
+                anchor_y='center',
+                batch=labelbatch
+            )
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        if (self.sprite.x < x and
+                x < self.sprite.x + self.sprite.width and
+                self.sprite.y < y and
+                y < self.sprite.y + self.sprite.height):
+            self.sprite.image = self.hoversprite
+        else:
+            self.trigger = 0
+            self.sprite.image = self.upsprite
+
+    def move(self, x, y):
+        self.sprite.x, self.label.x = x, x
+        self.sprite.y, self.label.y = y, y
+
+    def on_mouse_press(self, x, y, mode):
+        if (self.sprite.x < x and
+                x < self.sprite.x + self.sprite.width and
+                self.sprite.y < y and
+                y < self.sprite.y + self.sprite.height):
+            if mode == 1 and self.trigger == 1:
+                self.trigger = 0
+                self.sprite.image = self.hoversprite
+                try:
+                    self.do_action()
+                except:
+                    pass
+            if mode == 0:
+                self.sprite.image = self.downsprite
+                self.trigger = 1
+
+    def do_action(self):
+        try:
+            self.func()
+        except:
+            pass
+
+
 clock = 30
 try:
     clock = int(sys.argv[1])
@@ -28,9 +88,9 @@ def load_image(image, anchor=True):
 
 fps_display = pyglet.clock.ClockDisplay()
 
-# button = load_image('button.png', False)
-# buttonhover = load_image('buttonhover.png', False)
-# buttondown = load_image('buttondown.png', False)
+button = load_image('button.png', False)
+buttonhover = load_image('buttonhover.png', False)
+buttondown = load_image('buttondown.png', False)
 # sprite = pyglet.sprite.Sprite(
 # 	button,
 # 	100, 100, batch=batches[0]
@@ -40,14 +100,15 @@ fps_display = pyglet.clock.ClockDisplay()
 class Game(pyglet.window.Window):
     def __init__(self, height, width, batches):
         super(Game, self).__init__(width, height, caption='Buttons')
-        self.dorun = True
-        pyglet.gl.glClearColor(.2, .2, .2, .2)
+        self.dorun = False
+        pyglet.gl.glClearColor(.5, .5, .5, 1)
         self.alive = True
         self.batches = batches
         self.time = None
         self.trial = 1
+        self.button = None
         self.label = pyglet.text.Label(
-            "nothing",
+            "",
             font_name='Times New Roman',
             font_size=128,
             x=window_width / 2,
@@ -69,6 +130,7 @@ class Game(pyglet.window.Window):
         )
 
         self.notify = None
+        self.setup()
 
     def render(self, *args):
         self.update()
@@ -120,32 +182,35 @@ class Game(pyglet.window.Window):
 
             else:
                 self.label.text = str(clock - elapsed)
-        # if key_handler[key.D]:
-        #     sprite.x += 1
-        # if key_handler[key.A]:
-        #     sprite.x -= 1
-        # if key_handler[key.W]:
-        #     sprite.y += 1
-        # if key_handler[key.S]:
-        #     sprite.y -= 1
+
+    def set_time(self):
+        self.time = time.time()
+
+    def start(self):
+        if not self.dorun:
+            self.dorun = True
+            self.set_time()
 
     def on_draw(self):
         self.render()
 
-    def set_time(self):
-        self.time = time.time()
+    def setup(self):
+        self.button = Button(
+            button, buttondown, buttonhover, (window_width - button.width) / 2,
+            100, self.start, self.batches[1], "Start", None, self.batches[2]
+        )
 
     def on_close(self):
         self.alive = False
 
     def on_mouse_release(self, x, y, button, modifiers):
-        pass
+        self.button.on_mouse_press(x, y, 1)
 
     def on_mouse_press(self, x, y, button, modifiers):
-        pass
+        self.button.on_mouse_press(x, y, 0)
 
     def on_mouse_motion(self, x, y, dx, dy):
-        pass
+        self.button.on_mouse_motion(x, y, dx, dy)
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         pass
