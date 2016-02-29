@@ -190,6 +190,8 @@ class Game(pyglet.window.Window):
         if not self.dorun:
             self.dorun = True
             self.set_time()
+            self.button.label.delete()
+            self.button = None
 
     def on_draw(self):
         self.render()
@@ -204,13 +206,22 @@ class Game(pyglet.window.Window):
         self.alive = False
 
     def on_mouse_release(self, x, y, button, modifiers):
-        self.button.on_mouse_press(x, y, 1)
+        try:
+            self.button.on_mouse_press(x, y, 1)
+        except:
+            pass
 
     def on_mouse_press(self, x, y, button, modifiers):
-        self.button.on_mouse_press(x, y, 0)
+        try:
+            self.button.on_mouse_press(x, y, 0)
+        except:
+            pass
 
     def on_mouse_motion(self, x, y, dx, dy):
-        self.button.on_mouse_motion(x, y, dx, dy)
+        try:
+            self.button.on_mouse_motion(x, y, dx, dy)
+        except:
+            pass
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         pass
