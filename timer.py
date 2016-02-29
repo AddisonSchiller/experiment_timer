@@ -6,6 +6,17 @@ from pyglet.window import key # noqa
 from pyglet.window import mouse # noqa
 import sys
 
+def load_sound(file_name):
+    if file_name:
+        return pyglet.media.load('sounds/' + file_name, streaming=False)
+    return False
+
+
+def play_sound(sound_file):
+    if sound_file:
+        sound = pyglet.media.Player()
+        sound.queue(sound_file)
+        sound.play() # noqa
 
 class Button(object):
     def __init__(self, upsprite, hoversprite, downsprite, x, y, callback=None, batch=None, label=None, args=None, labelbatch=None):
@@ -67,11 +78,11 @@ class Button(object):
             pass
 
 
-clock = 30
+clock = 20
 try:
     clock = int(sys.argv[1])
 except:
-    clock = 30
+    clock = 20
 
 batches = [pyglet.graphics.Batch(), pyglet.graphics.Batch(), pyglet.graphics.Batch(), ]
 
@@ -92,14 +103,15 @@ button = load_image('button.png', False)
 buttonhover = load_image('buttonhover.png', False)
 buttondown = load_image('buttondown.png', False)
 # sprite = pyglet.sprite.Sprite(
-# 	button,
-# 	100, 100, batch=batches[0]
+#   button,
+#   100, 100, batch=batches[0]
 # )
 
 
 class Game(pyglet.window.Window):
     def __init__(self, height, width, batches):
-        super(Game, self).__init__(width, height, caption='Buttons')
+        super(Game, self).__init__(width, height, caption='shock_program')
+        self.beep = load_sound('beep.wav')
         self.dorun = False
         pyglet.gl.glClearColor(.5, .5, .5, 1)
         self.alive = True
@@ -159,6 +171,7 @@ class Game(pyglet.window.Window):
         # elapsed = int(elapsed)
             # print elapsed
             if clock - elapsed == 0:
+                play_sound(self.beep)
                 self.label.text = "X"
                 if self.trial < 5:
                     self.trial += 1
@@ -169,12 +182,34 @@ class Game(pyglet.window.Window):
                 else:
                     self.label.text = ""
                     self.dorun = False
-                    self.notify = pyglet.text.Label(
-                        "Please notify the experimenter",
+                    self.notify_1 = pyglet.text.Label(
+                        "Block 1 complete",
                         font_name='Times New Roman',
                         font_size=32,
                         x=window_width / 2,
                         y=window_height / 2 + 100,
+                        anchor_x='center',
+                        anchor_y='center',
+                        batch=self.batches[0]
+                    )
+
+                    self.notify_2 = pyglet.text.Label(
+                        "Notify the Experimenter",
+                        font_name='Times New Roman',
+                        font_size=32,
+                        x=window_width / 2,
+                        y=window_height / 2 + 50,
+                        anchor_x='center',
+                        anchor_y='center',
+                        batch=self.batches[0]
+                    )
+
+                    self.notify_3 = pyglet.text.Label(
+                        "Block 2 will be 50% chance shock per trial",
+                        font_name='Times New Roman',
+                        font_size=32,
+                        x=window_width / 2,
+                        y=window_height / 2 - 50,
                         anchor_x='center',
                         anchor_y='center',
                         batch=self.batches[0]
@@ -187,6 +222,7 @@ class Game(pyglet.window.Window):
         self.time = time.time()
 
     def start(self):
+        self.start_label.delete()
         if not self.dorun:
             self.dorun = True
             self.set_time()
@@ -197,6 +233,16 @@ class Game(pyglet.window.Window):
         self.render()
 
     def setup(self):
+        self.start_label = pyglet.text.Label(
+            "Block 1 (20% shock chance per trial)",
+            font_name='Times New Roman',
+            font_size=32,
+            x=window_width / 2,
+            y=window_height / 2 + 100,
+            anchor_x='center',
+            anchor_y='center',
+            batch=self.batches[0]
+        )
         self.button = Button(
             button, buttondown, buttonhover, (window_width - button.width) / 2,
             100, self.start, self.batches[1], "Start", None, self.batches[2]
